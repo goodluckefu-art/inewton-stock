@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iNewton Electronics Store Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f4f6f9;
+      color: #333;
+    }
+
+    header {
+      background: #1e293b;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+
+    h2 {
+      margin-top: 0;
+      color: #1e293b;
+    }
+
+    input, button, select {
+      margin: 5px 0;
+      padding: 8px;
+      width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    .danger {
+      background: #dc2626;
+    }
+
+    .danger:hover {
+      background: #b91c1c;
+    }
+
+    .download {
+      background: #16a34a;
+    }
+
+    .download:hover {
+      background: #15803d;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      text-align: center;
+    }
+
+    th {
+      background: #2563eb;
+      color: white;
+    }
+
+    .full-width {
+      grid-column: span 2;
+    }
+  </style>
+</head>
+<body>
+  <header>iNewton Electronics Store Dashboard</header>
+  <div class="container">
+    
+    <!-- Goods Section -->
+    <div class="card">
+      <h2>Add Goods</h2>
+      <input type="text" id="goodName" placeholder="Goods Name">
+      <input type="number" id="costPrice" placeholder="Cost Price">
+      <input type="number" id="salePrice" placeholder="Sale Price">
+      <input type="number" id="quantity" placeholder="Quantity">
+      <button onclick="addGood()">Add Good</button>
+    </div>
+
+    <!-- Sales Section -->
+    <div class="card">
+      <h2>Record Sale</h2>
+      <select id="saleGood"></select>
+      <input type="number" id="saleQuantity" placeholder="Quantity Sold">
+      <button onclick="recordSale()">Record Sale</button>
+    </div>
+
+    <!-- Goods Table -->
+    <div class="card full-width">
+      <h2>Goods Inventory</h2>
+      <table id="goodsTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Cost Price</th>
+            <th>Sale Price</th>
+            <th>Quantity</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <!-- Report Section -->
+    <div class="card full-width">
+      <h2>Sales Report</h2>
+      <table id="reportTable">
+        <thead>
+          <tr>
+            <th>Goods</th>
+            <th>Quantity Sold</th>
+            <th>Total Revenue</th>
+            <th>Total Profit</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <button class="download" onclick="downloadReport()">Download Report (Excel)</button>
+      <button class="danger" onclick="resetAll()">Reset All Data</button>
+    </div>
+  </div>
+
+  <script>
+    let goods = [];
+    let sales = [];
+
+    // Add Goods
+    function addGood() {
+      const name = document.getElementById("goodName").value;
+      const cost = parseFloat(document.getElementById("costPrice").value);
+      const sale = parseFloat(document.getElementById("salePrice").value);
+      const qty = parseInt(document.getElementById("quantity").value);
+
+      if (!name || isNaN(cost) || isNaN(sale) || isNaN(qty)) {
+        alert("Please fill all fields correctly!");
+        return;
+      }
+
+      goods.push({ name, cost, sale, qty });
+      updateGoodsTable();
+      updateSaleDropdown();
+
+      document.getElementById("goodName").value = "";
+      document.getElementById("costPrice").value = "";
+      document.getElementById("salePrice").value = "";
+      document.getElementById("quantity").value = "";
+    }
+
+    // Update Goods Table
+    function updateGoodsTable() {
+      const tbody = document.querySelector("#goodsTable tbody");
+      tbody.innerHTML = "";
+      goods.forEach(good => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${good.name}</td>
+            <td>₦${good.cost}</td>
+            <td>₦${good.sale}</td>
+            <td>${good.qty}</td>
+          </tr>`;
+      });
+    }
+
+    // Update Dropdown for Sales
+    function updateSaleDropdown() {
+      const select = document.getElementById("saleGood");
+      select.innerHTML = "";
+      goods.forEach((good, index) => {
+        select.innerHTML += `<option value="${index}">${good.name}</option>`;
+      });
+    }
+
+    // Record Sale
+    function recordSale() {
+      const goodIndex = document.getElementById("saleGood").value;
+      const qtySold = parseInt(document.getElementById("saleQuantity").value);
+
+      if (goodIndex === "" || isNaN(qtySold) || qtySold <= 0) {
+        alert("Please enter valid sale data!");
+        return;
+      }
+
+      if (qtySold > goods[goodIndex].qty) {
+        alert("Not enough stock available!");
+        return;
+      }
+
+      goods[goodIndex].qty -= qtySold;
+      sales.push({
+        name: goods[goodIndex].name,
+        qtySold,
+        revenue: qtySold * goods[goodIndex].sale,
+        profit: qtySold * (goods[goodIndex].sale - goods[goodIndex].cost)
+      });
+
+      updateGoodsTable();
+      updateReport();
+      document.getElementById("saleQuantity").value = "";
+    }
+
+    // Update Report Table
+    function updateReport() {
+      const tbody = document.querySelector("#reportTable tbody");
+      tbody.innerHTML = "";
+      sales.forEach(sale => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${sale.name}</td>
+            <td>${sale.qtySold}</td>
+            <td>₦${sale.revenue}</td>
+            <td>₦${sale.profit}</td>
+          </tr>`;
+      });
+    }
+
+    // Download Report as CSV (Excel Compatible)
+    function downloadReport() {
+      if (sales.length === 0) {
+        alert("No sales data to download!");
+        return;
+      }
+
+      let csvContent = "data:text/csv;charset=utf-8,Goods,Quantity Sold,Total Revenue,Total Profit\n";
+      sales.forEach(sale => {
+        csvContent += `${sale.name},${sale.qtySold},${sale.revenue},${sale.profit}\n`;
+      });
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "sales_report.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // Reset All Data
+    function resetAll() {
+      if (confirm("Are you sure you want to reset all data?")) {
+        goods = [];
+        sales = [];
+        updateGoodsTable();
+        updateSaleDropdown();
+        updateReport();
+      }
+    }
+  </script>
+</body>
+</html>
